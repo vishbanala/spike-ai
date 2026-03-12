@@ -7,6 +7,7 @@ import {
   PRESET_QA,
   ROLE_LABELS,
 } from "@/lib/presetQa";
+import { CreditsBanner } from "@/components/CreditsBanner";
 
 interface Message {
   from: "user" | "ai";
@@ -16,9 +17,6 @@ interface Message {
 interface ChatScreenProps {
   role: Role;
 }
-
-const CREDITS_BANNER =
-  "SpikeAI is wired to a real AI volleyball coach behind the scenes. In this public demo, live AI responses are limited to free-tier credits. When credits are out, you'll still see our best preloaded coaching answers instead of a live AI reply.";
 
 const AI_FALLBACK_MESSAGE =
   "Network error. The preset answer above is still valid coaching!";
@@ -101,12 +99,7 @@ export function ChatScreen({ role }: ChatScreenProps) {
         </div>
       </header>
 
-      {/* Credits banner */}
-      <div className="flex-shrink-0 mx-4 mt-3 px-4 py-3 bg-slate-900/80 backdrop-blur-sm border border-orange-500/30 rounded-lg">
-        <p className="text-xs text-gray-300 leading-relaxed">
-          {CREDITS_BANNER}
-        </p>
-      </div>
+      <CreditsBanner />
 
       {/* Chat messages area */}
       <div

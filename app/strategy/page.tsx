@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { ScreenBackground } from "@/components/ScreenBackground";
+import { CreditsBanner } from "@/components/CreditsBanner";
 import { UNSPLASH } from "@/lib/unsplash";
 
 export default function StrategyPage() {
@@ -39,10 +40,10 @@ export default function StrategyPage() {
   return (
     <ScreenBackground imageId={UNSPLASH.home} stripeTop>
       <div className="px-8 py-12 flex flex-col flex-1 max-w-3xl mx-auto w-full">
-        <header className="flex items-center gap-4 mb-8">
+        <header className="flex flex-col gap-1 mb-4">
           <Link
             href="/"
-            className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors"
+            className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors w-fit"
           >
             <ArrowLeft className="w-5 h-5" />
             Back
@@ -50,8 +51,16 @@ export default function StrategyPage() {
           <h1 className="text-4xl text-white font-bold tracking-tight">
             Game Strategy
           </h1>
+          <p className="text-sm text-gray-400">
+            Input opponent stats for strategic recommendations
+          </p>
         </header>
 
+        <CreditsBanner />
+
+        <h2 className="text-orange-400 font-medium text-lg mt-6 mb-4">
+          Opponent Statistics
+        </h2>
         <form
           onSubmit={handleAnalyze}
           className="bg-slate-800/70 backdrop-blur-md border border-orange-500/30 rounded-2xl p-8 mb-8"
@@ -67,7 +76,7 @@ export default function StrategyPage() {
                 value={returnPrimary}
                 onChange={(e) => setReturnPrimary(e.target.value)}
                 className="w-full bg-slate-900/50 border border-orange-500/20 focus:border-orange-500 rounded-lg px-4 py-3 text-white placeholder:text-gray-500 outline-none transition-colors"
-                placeholder="e.g. Outside hitter"
+                placeholder="e.g., Libero - 2.3 rating"
               />
             </div>
             <div>
