@@ -1,29 +1,50 @@
-import Link from "next/link";
+"use client";
 
-const roles = [
-  { id: "outside", label: "Outside Hitter" },
-  { id: "libero", label: "Libero" },
-  { id: "setter", label: "Setter" },
-  { id: "middle", label: "Middle Blocker" },
-  { id: "opposite", label: "Opposite Hitter" },
-] as const;
+import { ClipboardList, MapPin } from "lucide-react";
+import { FeatureCard } from "@/components/FeatureCard";
+import { VolleyballIcon } from "@/components/VolleyballIcon";
+import { ScreenBackground } from "@/components/ScreenBackground";
+import { UNSPLASH } from "@/lib/unsplash";
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center px-4">
-      <h1 className="text-2xl font-bold mb-2">SpikeAI</h1>
-      <p className="text-gray-400 text-sm mb-8">Choose a position to start chatting</p>
-      <div className="flex flex-wrap gap-3 justify-center">
-        {roles.map(({ id, label }) => (
-          <Link
-            key={id}
-            href={`/chat/${id}`}
-            className="rounded-xl bg-slate-800 hover:bg-orange-500/20 border border-orange-500/30 px-5 py-3 text-sm font-medium transition-colors"
-          >
-            {label}
-          </Link>
-        ))}
+    <ScreenBackground
+      imageId={UNSPLASH.home}
+      stripeTop
+      stripeBottom
+    >
+      <div className="flex-1 flex flex-col items-center justify-center px-8 py-12">
+        <div className="flex flex-col items-center text-center mb-12">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-500/50 mb-6">
+            <VolleyballIcon className="w-8 h-8 text-white" />
+          </div>
+          <h1 className="text-7xl text-white font-bold tracking-tight">
+            SpikeAI
+          </h1>
+          <div className="flex items-center gap-4 mt-4">
+            <span className="h-px w-12 bg-orange-500 flex-shrink-0" />
+            <span className="text-orange-400 text-lg uppercase tracking-widest">
+              AI-Powered Volleyball Training
+            </span>
+            <span className="h-px w-12 bg-orange-500 flex-shrink-0" />
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-8 justify-center">
+          <FeatureCard
+            href="/strategy"
+            icon={ClipboardList}
+            title="Game Strategy"
+            description="Analyze plays and tactics"
+          />
+          <FeatureCard
+            href="/positions"
+            icon={MapPin}
+            title="Positional Help"
+            description="Optimize court positioning"
+          />
+        </div>
       </div>
-    </div>
+    </ScreenBackground>
   );
 }

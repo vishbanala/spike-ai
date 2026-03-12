@@ -1,7 +1,12 @@
 "use client";
-import { useState } from "react";
 
-type Role = "outside" | "libero" | "setter" | "middle" | "opposite";
+import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
+import {
+  type Role,
+  PRESET_QA,
+  ROLE_LABELS,
+} from "@/lib/presetQa";
 
 interface Message {
   from: "user" | "ai";
@@ -12,73 +17,105 @@ interface ChatScreenProps {
   role: Role;
 }
 
+const CREDITS_BANNER =
+  "SpikeAI is wired to a real AI volleyball coach behind the scenes. In this public demo, live AI responses are limited to free-tier credits. When credits are out, you'll still see our best preloaded coaching answers instead of a live AI reply.";
+
+const AI_FALLBACK_MESSAGE =
+  "Network error. The preset answer above is still valid coaching!";
+
 export function ChatScreen({ role }: ChatScreenProps) {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
-
   const [loading, setLoading] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  async function handleSend() {
-    if (!input.trim() || loading) return;
-    const text = input.trim();
-    setInput("");
-    setMessages(prev => [...prev, { from: "user", text }]);
+  const label = ROLE_LABELS[role];
+  const presets = PRESET_QA[role];
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({
+      top: scrollRef.current.scrollHeight,
+      behavior: "smooth",
+    });
+  }, [messages, loading]);
+
+  async function handlePresetClick(index: number) {
+    const preset = presets[index];
+    if (!preset || loading) return;
+
+    const userMsg: Message = { from: "user", text: preset.question };
+    const presetMsg: Message = { from: "ai", text: preset.presetAnswer };
+
+    setMessages((prev) => [...prev, userMsg, presetMsg]);
     setLoading(true);
+
     try {
-      const history = [...messages, { from: "user" as const, text }];
-      const res = await fetch("/api/chat", {
+      const history = [...messages, userMsg, presetMsg];
+      const res = await fetch("/api/chat-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: history.map(m => ({
-            sender: m.from === "user" ? "user" : "assistant",
-            text: m.text,
-          })),
+          role,
+          messages: history.map((m) => ({ from: m.from, text: m.text })),
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Request failed");
-      setMessages(prev => [...prev, { from: "ai", text: data.reply }]);
-    } catch (err) {
-      setMessages(prev => [
+
+      if (!res.ok) {
+        throw new Error(data.reply ?? data.error ?? "Request failed");
+      }
+
+      const followUp: Message = {
+        from: "ai",
+        text: (data.reply ?? "").trim() || AI_FALLBACK_MESSAGE,
+      };
+      setMessages((prev) => [...prev, followUp]);
+    } catch {
+      setMessages((prev) => [
         ...prev,
-        { from: "ai", text: err instanceof Error ? err.message : "Something went wrong." },
+        { from: "ai", text: AI_FALLBACK_MESSAGE },
       ]);
     } finally {
       setLoading(false);
     }
   }
 
-  const label: Record<Role, string> = {
-    outside: "Outside Hitter",
-    libero: "Libero",
-    setter: "Setter",
-    middle: "Middle Blocker",
-    opposite: "Opposite Hitter",
-  };
-
   return (
     <div className="min-h-screen bg-slate-950 text-white flex flex-col">
-      <header className="px-6 py-4 border-b border-orange-500/30 flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => window.history.back()}
-          className="text-sm text-gray-400 hover:text-white"
-        >
-          ← Back
-        </button>
-        <div>
-          <h1 className="text-xl font-semibold">{label[role]} Chat</h1>
-          <p className="text-xs text-gray-400">
-            Ask anything about {label[role]} play
-          </p>
+      {/* Header */}
+      <header className="flex-shrink-0 bg-slate-950 border-b border-orange-500/30 px-4 py-3">
+        <div className="flex items-center gap-3">
+          <Link
+            href="/positions"
+            className="text-gray-400 hover:text-white transition-colors"
+          >
+            ← Back
+          </Link>
+          <div>
+            <h1 className="text-xl font-semibold text-white">
+              {label} Chat
+            </h1>
+            <p className="text-xs text-gray-400">
+              Ask anything about {label} play
+            </p>
+          </div>
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+      {/* Credits banner */}
+      <div className="flex-shrink-0 mx-4 mt-3 px-4 py-3 bg-slate-900/80 backdrop-blur-sm border border-orange-500/30 rounded-lg">
+        <p className="text-xs text-gray-300 leading-relaxed">
+          {CREDITS_BANNER}
+        </p>
+      </div>
+
+      {/* Chat messages area */}
+      <div
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto px-4 py-4 space-y-3 pb-40"
+      >
         {messages.length === 0 && (
-          <p className="text-sm text-gray-500 text-center mt-8">
-            Ask your first question about {label[role]} technique or decision-making.
+          <p className="text-center text-gray-500 text-sm pt-8">
+            Choose a question below to get expert coaching for {label}.
           </p>
         )}
 
@@ -98,29 +135,33 @@ export function ChatScreen({ role }: ChatScreenProps) {
             </div>
           </div>
         ))}
+
+        {loading && (
+          <div className="flex justify-start">
+            <div className="max-w-[70%] rounded-2xl px-4 py-2 text-sm bg-slate-800 text-gray-400">
+              Getting AI follow-up...
+            </div>
+          </div>
+        )}
       </div>
 
-      <form
-        onSubmit={e => {
-          e.preventDefault();
-          handleSend();
-        }}
-        className="border-t border-orange-500/20 px-4 py-3 flex gap-2 bg-slate-900/80"
-      >
-        <input
-          className="flex-1 rounded-full bg-slate-800 px-4 py-2 text-sm text-white placeholder:text-gray-500 outline-none"
-          placeholder="Ask about approach, blocking, serve receive..."
-          value={input}
-          onChange={e => setInput(e.target.value)}
-        />
-        <button
-          type="submit"
-          disabled={loading}
-          className="rounded-full bg-orange-500 px-4 py-2 text-sm font-medium hover:bg-orange-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loading ? "..." : "Send"}
-        </button>
-      </form>
+      {/* Preset questions footer (fixed) */}
+      <footer className="fixed bottom-0 left-0 right-0 px-4 py-3 border-t border-orange-500/20 bg-slate-900/80">
+        <p className="text-xs text-gray-400 mb-2">Choose a question:</p>
+        <div className="flex flex-wrap gap-2">
+          {presets.map((preset, index) => (
+            <button
+              key={index}
+              type="button"
+              onClick={() => handlePresetClick(index)}
+              disabled={loading}
+              className="text-xs rounded-full px-3 py-1.5 border border-orange-500/40 text-orange-100 hover:bg-orange-500/20 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {preset.question}
+            </button>
+          ))}
+        </div>
+      </footer>
     </div>
   );
 }
